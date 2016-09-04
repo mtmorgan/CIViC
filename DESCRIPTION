@@ -1,0 +1,16 @@
+Package: CIViC
+Title: Access Clinical Interpretations of Variations in Cancer Resource
+Version: 0.0.1
+Authors@R: person("Martin", "Morgan", email =
+        "martin.morgan@roswellpark.org", role = c("aut", "cre"))
+Description: This package provides access to CIViC (Clinical
+    Interpretations of Variations in Cancer) Resource through its
+    RESTful API.
+Depends:
+    R (>= 3.3.1), dplyr
+Imports:
+    httr, tidyjson
+License: Artistic-2.0
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 5.0.1
