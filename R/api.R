@@ -67,6 +67,13 @@
 #' 
 #' @name CIViC_API
 #' @importFrom httr content
+#' @examples
+#' gns <- genes()    # first 25; not so useful!
+#' gns               # dplyr tables
+#' brca <- tbl(gns, "gene") %>% select(id, name) %>%
+#'     filter(startsWith(name, "BRCA")) %>%
+#'     distinct
+#' inner_join(brca, tbl(gns, "variant"))
 #' @export
 genes <-
     function(page=1, count=25)
@@ -147,6 +154,13 @@ genes_comments <- function(id)
         )
 
 #' @rdname CIViC_API
+#' @examples
+#' v <- variants()    # first 'page', not so useful
+#' v
+#' tbl(v, "variant") %>%
+#'     filter(startsWith(entrez_name, "ABL")) %>%
+#'     select(entrez_name, name, description) %>%
+#'     mutate(description=substr(description, 1, 50))
 #' @export
 variants <-
     function(page=1, count=25)

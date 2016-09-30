@@ -46,4 +46,18 @@ variant_groups_comments(id)
 \description{
 Accessing CIViC resources
 }
+\examples{
+gns <- genes()    # first 25; not so useful!
+gns               # dplyr tables
+brca <- tbl(gns, "gene") \%>\% select(id, name) \%>\%
+    filter(startsWith(name, "BRCA")) \%>\%
+    distinct
+inner_join(brca, tbl(gns, "variant"))
+v <- variants()    # first 'page', not so useful
+v
+tbl(v, "variant") \%>\%
+    filter(startsWith(entrez_name, "ABL")) \%>\%
+    select(entrez_name, name, description) \%>\%
+    mutate(description=substr(description, 1, 50))
+}
 
