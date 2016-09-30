@@ -43,6 +43,17 @@ variant_groups(page = 1, count = 25)
 
 variant_groups_comments(id)
 }
+\arguments{
+\item{page}{integer(1)}
+
+\item{count}{integer(1). Retrieve records from \code{(page - 1) *
+count + 1} to \code{page * count} records.}
+
+\item{id}{character(1) identifier to retrieve information about.}
+
+\item{identifier_type}{character(1) type of identifier used
+\code{id} represents.}
+}
 \description{
 Accessing CIViC resources
 }

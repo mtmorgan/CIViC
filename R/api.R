@@ -1,3 +1,9 @@
+globalVariables(c(
+    "accepted_count", "alias", "array.index", "citation",
+    "description", "document.id", "entrez_id", "id", "name",
+    "pubmed_id", "rejected_count", "source_url", "submitted_count",
+    "variant_id", "variant_name"))
+
 .comments <-
     function(what=c("genes", "variants", "evidence"), id)
 {}
@@ -81,6 +87,9 @@
 #' Accessing CIViC resources
 #' 
 #' @name CIViC_API
+#' @param page integer(1)
+#' @param count integer(1). Retrieve records from \code{(page - 1) *
+#'     count + 1} to \code{page * count} records.
 #' @importFrom httr content
 #' @examples
 #' gns <- genes()    # first 25; not so useful!
@@ -108,6 +117,9 @@ genes <-
 }
 
 #' @rdname CIViC_API
+#' @param id character(1) identifier to retrieve information about.
+#' @param identifier_type character(1) type of identifier used
+#'     \code{id} represents.
 #' @importFrom httr content
 #' @export
 gene_detail <-

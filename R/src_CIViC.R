@@ -1,3 +1,5 @@
+#' @importFrom utils tail
+
 src_CIViC <-
     function(...)
 {
@@ -25,7 +27,7 @@ src_desc.src_CIViC <- function(x)
     paste0("CIViC query")
 
 #' @export
-src_tbls.src_CIViC <- names
+src_tbls.src_CIViC <- function(x) names(x)
 
 #' @importFrom dplyr tbl
 #' @export
