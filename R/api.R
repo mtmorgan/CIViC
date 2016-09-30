@@ -21,18 +21,38 @@
 #' @importFrom tidyjson enter_object gather_array spread_values
 #'     append_values_string jstring jnumber
 
-.gene_path <- function(json)
+.spread_gene <- function(json)
     json %>%
         spread_values(
             id = jnumber("id"),
             name = jstring("name"),
             entrez_id = jstring("entrez_id"),
             description = jstring("description")
-        ) %>% enter_object("aliases") %>% gather_array %>%
+        )
+
+.spread_evidence <- function(json)
+    json %>%
+        spread_values(
+            accepted_count = jnumber("accepted_count"),
+            rejected_count = jnumber("rejected_count"),
+            submitted_count = jnumber("submitted_count")
+        )
+
+.spread_sources <- function(json)
+    json %>%
+        spread_values(
+            pubmed_id = jstring("pubmed_id"),
+            citation = jstring("citation"),
+            source_url = jstring("source_url")
+        )
+
+.gene_path <- function(json)
+    json %>% .spread_gene %>%
+        enter_object("aliases") %>% gather_array %>%
         append_values_string("alias") %>%
         select(id, name, entrez_id, alias, description)
 
-.variant_path <- function(json)
+.gene_variant_path <- function(json)
     json %>%
         spread_values(id = jnumber("id")) %>%
         enter_object("variants") %>% gather_array %>%
@@ -42,26 +62,21 @@
         ) %>% select(id, variant_id, variant_name)
 
 .evidence_path <- function(json)
-    json %>% spread_values(id = jnumber("id")) %>%
+    json %>%
+        spread_values(id = jnumber("id")) %>%
         enter_object("variants") %>% gather_array %>%
         spread_values(variant_id = jnumber("id")) %>%
         enter_object("evidence_items") %>%
-        spread_values(
-            accepted_count = jnumber("accepted_count"),
-            rejected_count = jnumber("rejected_count"),
-            submitted_count = jnumber("submitted_count")
-        ) %>%
-        select(id, variant_id, accepted_count, rejected_count, submitted_count)    
+        .spread_evidence %>%
+        select(id, variant_id, accepted_count, rejected_count, submitted_count)
+
 .source_path <- function(json)
     json %>%
         spread_values(
             id = jnumber("id")
         ) %>% enter_object("sources") %>% gather_array %>%
-        spread_values(
-            pubmed_id = jstring("pubmed_id"),
-            citation = jstring("citation"),
-            source_url = jstring("source_url")
-        ) %>% select(id, pubmed_id, citation, source_url)
+        .spread_sources %>%
+        select(id, pubmed_id, citation, source_url)
 
 #' Accessing CIViC resources
 #' 
@@ -86,7 +101,7 @@ genes <-
     
     meta <- .meta_path(json %>% enter_object("_meta"))
     gene_id <- .gene_path(records)
-    variant <- .variant_path(records)
+    variant <- .gene_variant_path(records)
     evidence <- .evidence_path(records)
 
     src_CIViC(meta=meta, gene=gene_id, variant=variant, evidence=evidence)
@@ -103,12 +118,12 @@ gene_detail <-
     identifier_type <- match.arg(identifier_type)
 
     query <- paste0("genes/", id)
-    response <- .get(query, identifier_type)
+    response <- .get(query, c(identifier_type=identifier_type))
 
     json <- content(response, as="text")
 
     gene_id <- .gene_path(json)
-    variant <- .variant_path(json)
+    variant <- .gene_variant_path(json)
     ## FIXME variant_groups
     evidence <- .evidence_path(json)
     sources <- .source_path(json)
@@ -123,7 +138,18 @@ genes_comments <- function(id)
 
 ## variants
 
-.variant_coodinates <- function(json)
+.spread_variant <- function(json)
+    json %>%
+        spread_values(
+            id = jnumber("id"),
+            entrez_name = jstring("entrez_name"),
+            gene_id = jnumber("gene_id"),
+            name = jstring("name"),
+            description = jstring("description"),
+            type = jstring("type")
+        )
+
+.spread_coodinates <- function(json)
     json %>%
         spread_values(
             chromosome = jstring("chromosome"),
@@ -140,10 +166,8 @@ genes_comments <- function(id)
             reference_build = jstring("reference_build")
         )
 
-.variant_types_path <- function(json)
-    json %>% 
-        spread_values(id = jnumber("id")) %>%
-        enter_object("variant_types") %>% gather_array %>%
+.spread_variant_types <- function(json)
+    json %>%
         spread_values(
             variant_type_id = jnumber("id"),
             name = jstring("name"),
@@ -152,6 +176,12 @@ genes_comments <- function(id)
             description = jstring("description"),
             display_name = jstring("display_name")
         )
+
+.variant_types_path <- function(json)
+    json %>%
+        spread_values(id = jnumber("id")) %>%
+        enter_object("variant_types") %>% gather_array %>%
+        .spread_variant_types
 
 #' @rdname CIViC_API
 #' @examples
@@ -172,16 +202,9 @@ variants <-
     meta <- .meta_path(json %>% enter_object("_meta"))
     records <- json %>% enter_object("records") %>% gather_array
 
-    variant <- records %>%
-        spread_values(
-            id = jnumber("id"),
-            entrez_name = jstring("entrez_name"),
-            gene_id = jnumber("gene_id"),
-            name = jstring("name"),
-            description = jstring("description"),
-            type = jstring("type")
-        ) %>% enter_object("coordinates") %>%
-        .variant_coodinates %>%
+    variant <-
+        records %>% .spread_variant %>%
+        enter_object("coordinates") %>% .spread_coodinates %>%
         select(-document.id, -array.index)
 
     variant_types <- .variant_types_path(records) %>%
@@ -189,12 +212,7 @@ variants <-
 
     evidence_items <- records %>%
         spread_values(id = jnumber("id")) %>%
-        enter_object("evidence_items") %>%
-        spread_values(
-            accepted_count = jnumber("accepted_count"),
-            rejected_count = jnumber("rejected_count"),
-            submitted_count = jnumber("submitted_count")
-        ) %>%
+        enter_object("evidence_items") %>% .spread_evidence %>%
         select(id, accepted_count, rejected_count, submitted_count) 
     
     src_CIViC(meta=meta, variant=variant, variant_types = variant_types,
@@ -213,18 +231,8 @@ variant_detail <-
 
     json <- content(response, as="text")
 
-    variant <- json %>%
-        spread_values(
-            id = jnumber("id"),
-            entrez_name = jstring("entrez_name"),
-            gene_id = jnumber("gene_id"),
-            entrez_id = jnumber("entrez_id"),
-            name = jstring("name"),
-            description = jstring("description"),
-            type = jstring("type")
-        ) %>%
-        enter_object("coordinates") %>%
-        .variant_coodinates %>%
+    variant <- json %>% .spread_variant %>%
+        enter_object("coordinates") %>% .spread_coodinates %>%
         select(-document.id)
 
     variant_types <- .variant_types_path(json) %>% select(-document.id)
