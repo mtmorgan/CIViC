@@ -11,6 +11,7 @@ Use with
 
     library(CIViC)
     example(genes)
+    example(variants)
     
 and actually, at the moment, `genes()` and `variants()` are the only
 functions implemented.
