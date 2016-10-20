@@ -1,7 +1,7 @@
 # CIViCdb / R interface
 
 This provides a start on a low-level (not so user friendly) API to the
-[CIViC][1] Clinical Interpretations of Variants in Cancer data base.
+[CIViC][] Clinical Interpretations of Variants in Cancer data base.
 
 Install with
 
